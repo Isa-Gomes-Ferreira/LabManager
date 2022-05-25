@@ -1,3 +1,5 @@
+
+using LabManager.Database;
 using LabManager.Models;
 using Microsoft.Data.Sqlite;
 
@@ -5,29 +7,54 @@ namespace LabManager.Repositories;
 
 class ComputerRepository
 {
-        public List<Computer> GetAll()
+    private DatabaseConfig databaseConfig;
+
+    public ComputerRepository(DatabaseConfig databaseConfig)
+    {
+        this.databaseConfig = databaseConfig;
+    }
+
+    public List<Computer> GetAll()
+    {
+        var connection = new SqliteConnection(databaseConfig.ConnectionString);
+        connection.Open();
+
+        var command = connection.CreateCommand();
+        command.CommandText = "SELECT * FROM Computers";
+
+        var reader = command.ExecuteReader();
+
+        var computers = new List<Computer>();
+
+        while(reader.Read())
         {
-                var computers = new List<Computer>();
+            computers.Add(
+                new Computer(
+                    reader.GetInt32(0),
+                    reader.GetString(1),
+                    reader.GetString(2)
+                )
+            );
 
-                var connection = new SqliteConnection("Data Source=database.db");
-                connection.Open();
-
-                var command = connection.CreateCommand();
-                command.CommandText = "SELECT * FROM Computers;";
-
-                var reader = command.ExecuteReader();
-                while(reader.Read())
-                {
-                        var computer = new Computer(
-                                reader.GetInt32(0), 
-                                reader.GetString(1), 
-                                reader.GetString(2)
-                        );
-
-                        computers.Add(computer);
-                }
-                connection.Close();
-
-                return computers;
+            reader.GetInt32(0);
         }
+        connection.Close();
+
+        return computers;
+    }
+
+    public void Save(Computer computer)
+    {
+        var connection = new SqliteConnection(databaseConfig.ConnectionString);
+        connection.Open();
+
+        var command = connection.CreateCommand();
+        command.CommandText = "INSERT INTO Computers VALUES($id, $ram, $processor)";
+        command.Parameters.AddWithValue("$id", computer.Id);
+        command.Parameters.AddWithValue("$ram", computer.Ram);
+        command.Parameters.AddWithValue("$processor", computer.Processor);
+
+        command.ExecuteNonQuery();
+        connection.Close();
+    }
 }
