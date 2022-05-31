@@ -74,4 +74,19 @@ class ComputerRepository
         var computer = new Computer(reader.GetInt32(0), reader.GetString(1), reader.GetString(2));
         return computer;
     }
+
+    public Computer Update(Computer computer)
+    {
+        using var connection = new SqliteConnection(databaseConfig.ConnectionString);
+        connection.Open();
+
+        var command = connection.CreateCommand();
+        command.CommandText = "UPDATE Computers SET id = $id, ram = $ram, processor = $processor WHERE id = $id;";
+        command.Parameters.AddWithValue("$id", computer.Id);
+        command.Parameters.AddWithValue("$ram", computer.Ram);
+        command.Parameters.AddWithValue("$processor", computer.Processor);
+
+        command.ExecuteNonQuery();
+        return computer;
+    }
 }
